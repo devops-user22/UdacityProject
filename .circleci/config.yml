@@ -158,7 +158,7 @@ jobs:
   
   notify_on_success:
     docker:
-      - image: cimg/base:latest
+      - image: cimg/base:stable
     steps:
       - slack/notify:
           channel: C03GGQ6JHKL

@@ -45,24 +45,24 @@ commands:
             aws s3 rm s3://udapeople-prod-<<parameters.workflow_id>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow_id>>
 
-  revert-migrations:
+  revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here     
+      Workflow_ID:
+        type: string   
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
+          when: on_fail
           command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
+            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
             if(( $SUCCESS==1 )); 
             then
-            #  cd ~/project/backend
-            #  npm install
-            #  Add revert code here. You can find this in the Getting Started section.
-              exit 1
+              cd ~/project/backend
+              npm i
+              npm run migration:revert
             fi
+
             
 jobs:
   build-frontend:
@@ -232,6 +232,32 @@ jobs:
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml     
+
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - install_aws_cli
+      - run:
+          name: Run DB migrations
+          command: |
+            cd backend
+            npm install
+            npm run migrations >> migration_output.txt
+            cat migration_output.txt
+      - run:
+          name: Store migration result in a file.
+          command: |
+            if grep -q "has been executed successfully." migration_output.txt
+            then
+              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
+            fi
+      - destroy_environment
+      - revert_migrations:
+          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+
+
   notify_on_success:
     docker:
       - image: cimg/base:stable
@@ -261,6 +287,8 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
       - notify_on_success:
           requires:
             - build-frontend

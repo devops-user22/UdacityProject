@@ -8,7 +8,7 @@ commands:
     steps:
       - slack/notify:
           event: fail
-          channel: C03GGQ6JHKL
+          channel: circleci-devops
           template: basic_fail_1
 
   destroy-environment:

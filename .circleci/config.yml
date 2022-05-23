@@ -244,8 +244,7 @@ jobs:
           command: |
             cd backend
             npm install
-            npm run migrations >> migration_output.txt
-            cat migration_output.txt
+            npm run migrations > migration_output.txt
       - run:
           name: Store migration result in a file.
           command: |

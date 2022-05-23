@@ -87,8 +87,8 @@ jobs:
       - checkout
       - run:
           command: | 
-          npm install
-          npm audit --audit-level=critical --prefix backend
+            npm install
+            npm audit --audit-level=critical --prefix backend
 
   analyze_frontend:
     docker:
@@ -97,8 +97,8 @@ jobs:
       - checkout
       - run:
           command: |
-          npm install
-          npm audit --audit-level=critical --prefix frontend
+            npm install
+            npm audit --audit-level=critical --prefix frontend
 
   deploy_backend_infrastructure:
     docker:

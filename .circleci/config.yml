@@ -10,6 +10,24 @@ commands:
           event: fail
           channel: circleci-devops
           template: basic_fail_1
+          
+  install_aws_cli:
+    steps:
+      - run:
+          name: install aws cli
+          command: |
+            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+            unzip awscli-bundle.zip
+            sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+  install_ansible:
+    steps:
+      - run:
+          name: install ubuntu ansible
+          command: |
+            sudo apt update
+            sudo apt install software-properties-common
+            sudo add-apt-repository --yes --update ppa:ansible/ansible
+            sudo apt install ansible
 
   destroy_environment:
     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
@@ -162,9 +180,10 @@ jobs:
        
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_aws_cli
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -202,6 +221,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
+      - install_ansible
       - add_ssh_keys:
           fingerprints: ["3b:00:12:97:31:d8:93:15:08:b0:2c:7e:6c:ac:62:7b"]
       - attach_workspace:

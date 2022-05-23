@@ -206,6 +206,7 @@ jobs:
           fingerprints: ["3b:00:12:97:31:d8:93:15:08:b0:2c:7e:6c:ac:62:7b"]
       - attach_workspace:
           at: ~/
+      - run: yum -y install tar gzip
       - run:
           name: Configure server
           command: |

@@ -80,26 +80,6 @@ jobs:
       - run: npm i --prefix frontend
       - run: npm run test --prefix frontend
 
-  analyze_backend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - run:
-          command: | 
-            npm install
-            npm audit --audit-level=critical --prefix backend
-
-  analyze_frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - run:
-          command: |
-            npm install
-            npm audit --audit-level=critical --prefix frontend
-
   deploy_backend_infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -347,12 +327,6 @@ workflows:
       - test_frontend:
           requires:
             - build_frontend
-      - analyze_backend:
-          requires:
-            - test_backend
-      - analyze_frontend:
-          requires:
-            - test_frontend
       - deploy_backend_infrastructure:
           requires:
             - analyze_backend

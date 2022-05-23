@@ -6,6 +6,14 @@
     name: ["nodejs"]
     state: latest
     update_cache: yes
+   
+- name: "Install npm"
+  become: true
+  apt:
+    name: ["npm"]
+    state: latest
+    update_cache: yes
+
 
 - name: "Install zip utility."
   apt:

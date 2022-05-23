@@ -218,7 +218,7 @@ workflows:
           filters:
             branches:
               only: [Master]
-       - notify_on_success:
+      - notify_on_success:
           requires:
             - build-frontend
             - build-backend

@@ -1,5 +1,27 @@
 version: 2.1
 
+orbs:
+  node: 'circleci/node:4.1'
+  slack: circleci/slack@4.1
+jobs:
+  deploy:
+    executor:
+      name: node/default
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          command: npm run deploy
+      - slack/notify:
+          channel: C03GGQ6JHKL
+          event: fail
+          template: basic_fail_1
+workflows:
+  deploy_and_notify:
+    jobs:
+      - deploy:
+          context: slack-secrets   
+
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -114,6 +136,7 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
+            # npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
       - save_cache:
           paths: [frontend/scan]
@@ -124,17 +147,20 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-scan]
       - run:
           name: Back-end scan
           command: |
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
+            # npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
       - save_cache:
           paths: [backend/scan]
           key: backend-scan
-    
+
 workflows:
   default:
     jobs:
@@ -148,3 +174,5 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+      - deploy:
+          context: slack-secrets   

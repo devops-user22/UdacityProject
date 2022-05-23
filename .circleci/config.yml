@@ -329,15 +329,15 @@ workflows:
             - build_frontend
       - deploy_backend_infrastructure:
           requires:
-            - analyze_backend
-            - analyze_frontend
+            - test_backend
+            - test_frontend
           filters:
             branches:
               only: [ master ]
       - deploy_frontend_infrastructure:
           requires:
-            - analyze_backend
-            - analyze_frontend
+            - test_backend
+            - test_frontend
           filters:
             branches:
               only: [ master ]

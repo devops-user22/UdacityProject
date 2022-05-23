@@ -1,8 +1,4 @@
-- name: "Add Node"
-  become: true
-  shell: |
-    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-    
+   
 - name: "Install zip utility."
   become: true
   apt:
@@ -10,6 +6,11 @@
     state: latest
     update_cache: yes
     
+- name: "Add Node"
+  become: true
+  shell: |
+    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+
 - name: "Install zip utility."
   apt:
     name: [ "zip", "unzip" ]

@@ -1,28 +1,16 @@
 version: 2.1
 
-orbs:
-  node: 'circleci/node:4.1'
-  slack: circleci/slack@4.1
-jobs:
-  deploy:
-    executor:
-      name: node/default
-    steps:
-      - checkout
-      - node/install-packages
-      - run:
-          command: npm run deploy
-      - slack/notify:
-          channel: C03GGQ6JHKL
-          event: fail
-          template: basic_fail_1
-workflows:
-  deploy_and_notify:
-    jobs:
-      - deploy:
-          context: slack-secrets   
+orbs: 
+  slack: circleci/slack@4.10.1
 
 commands:
+  notify_on_failure:
+    steps:
+      - slack/notify:
+          event: fail
+          channel: C03GGQ6JHKL
+          template: basic_fail_1
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -71,6 +59,8 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - notify_on_failure
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -87,6 +77,7 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - notify_on_failure
 
   test-frontend:
     docker:
@@ -104,7 +95,7 @@ jobs:
       - save_cache:
           paths: [frontend/test]
           key: frontend-test
-
+      - notify_on_failure
                 
   test-backend:
     docker:
@@ -122,6 +113,7 @@ jobs:
       - save_cache:
           paths: [backend/test]
           key: backend-test
+      - notify_on_failure
 
   scan-frontend:
     docker:
@@ -141,6 +133,7 @@ jobs:
       - save_cache:
           paths: [frontend/scan]
           key: frontend-scan
+      - notify_on_failure
 
   scan-backend:
     docker:
@@ -155,12 +148,23 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
             # npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
       - save_cache:
           paths: [backend/scan]
           key: backend-scan
-
+      - notify_on_failure
+  
+  notify_on_success:
+    docker:
+      - image: cimg/base:latest
+    steps:
+      - slack/notify:
+          channel: C03GGQ6JHKL
+          event: pass
+          template: success_tag_deployment
+              
 workflows:
   default:
     jobs:
@@ -174,5 +178,7 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - deploy:
-          context: slack-secrets   
+      - notify_on_success:
+          requires: 
+            - ""
+ 

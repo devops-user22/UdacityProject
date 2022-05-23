@@ -244,7 +244,7 @@ jobs:
           name: Run DB migrations
           command: |
             cd backend
-            nom install
+            npm install
             npm install typescript -g
             npm run migrations >> migration_output.txt
             cat migration_output.txt
@@ -276,21 +276,21 @@ workflows:
     jobs:
       - build-frontend
       - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          filters:
-            branches:
-              only: [master]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
+      #- test-frontend:
+          #requires: [build-frontend]
+      #- test-backend:
+          #requires: [build-backend]
+      #- scan-backend:
+          #requires: [build-backend]
+      #- scan-frontend:
+          #requires: [build-frontend]
+      #- deploy-infrastructure:
+          #requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          #filters:
+            #branches:
+              #only: [master]
+      #- configure-infrastructure:
+          #requires: [deploy-infrastructure]
       - run_db_migrations_for_backend:
           requires: [configure-infrastructure]
       - notify_on_success:

@@ -207,6 +207,11 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
+          name: Install dependencies
+          command: |
+            apk add --update curl nodejs npm ansible zip
+            pip install awscli
+      - run:
           name: Configure server
           command: |
             cd .circle/ansible

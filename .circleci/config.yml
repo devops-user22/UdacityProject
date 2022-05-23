@@ -155,16 +155,7 @@ jobs:
           paths: [backend/scan]
           key: backend-scan
       - notify_on_failure
-  
-  notify_on_success:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - slack/notify:
-          channel: C03GGQ6JHKL
-          event: pass
-          template: success_tag_deployment
-          
+       
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -198,7 +189,17 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt                         
+            - project/.circleci/ansible/inventory.txt
+    
+  notify_on_success:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - slack/notify:
+          channel: C03GGQ6JHKL
+          event: pass
+          template: success_tag_deployment
+              
 workflows:
   default:
     jobs:
@@ -223,4 +224,4 @@ workflows:
             - build-backend
             - scan-backend
             - scan-frontend
-
+ 

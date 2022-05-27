@@ -1,17 +1,17 @@
 ---
 - name: "Creates backend app directory"
   file:
-    path: ~/backend_app
+    path: ~/backend-app
     state: directory
 
 - name: "Copy compiled backend app"
-  copy:
+  unarchive:
     src: artifact.tar.gz
-    dest: "~/backend_app/"
+    dest: ~/backend-app/
 
 - name: "Install dependencies for project"
   shell: |
-    cd ~/backend_app
+    cd ~/backend-app
     npm i
 
 - name: "Executing node"

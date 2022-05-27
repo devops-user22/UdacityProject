@@ -54,7 +54,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            $SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
             if(( $SUCCESS==1 )); 
             then
               cd ~/project/backend
@@ -301,10 +301,10 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
+      - checkout
       - install_aws_cli
       - install_ansible
       - install_nodejs
-      - checkout
       - attach_workspace:
           at: ~/
       - add_ssh_keys:

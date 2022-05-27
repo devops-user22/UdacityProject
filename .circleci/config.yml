@@ -28,7 +28,6 @@ commands:
             sudo apt install software-properties-common
             sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible
-
   destroy_environment:
     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
     parameters:
@@ -62,10 +61,10 @@ commands:
               npm i
               npm run migration:revert
             fi
- install_nodejs:
+  install_nodejs:
     steps:
       - run:
-          name:Install NodeJS 13
+          name: Install NodeJS 13
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt-get install -y nodejs
@@ -264,15 +263,14 @@ jobs:
       - destroy_environment
       - revert_migrations:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
-
-  deploy_frontend:
+  deploy-frontend:
     docker:
       - image: cimg/base:stable
     steps:
       - install_aws_cli
       - checkout
       - install_nodejs
-      - restors_cache:
+      - restore_cache:
           keys: [frontend-deps]
       - run:
           name: Install dependencies
@@ -299,12 +297,12 @@ jobs:
       - revert_migrations:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
   
-  deploy_backend:
+  deploy-backend:
     docker:
       - image: cimg/base:stable
     steps:
       - install_aws_cli
-      - install_ansiblr
+      - install_ansible
       - install_nodejs
       - checkout
       - attach_workspace:
@@ -326,7 +324,7 @@ jobs:
             tar -czf artifact.tar.gz dist/* package*
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-       - run:
+      - run:
           name: Deploy backend
           command: |           
             export TYPEORM_MIGRATION_DIR=./migrations
@@ -345,7 +343,8 @@ jobs:
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/playbook.yml
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
-      - undo_migrations
+      - revert_migrations:
+          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   notify_on_success:
     docker:

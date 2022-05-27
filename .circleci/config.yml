@@ -267,8 +267,8 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - install_aws_cli
       - checkout
+      - install_aws_cli
       - install_nodejs
       - restore_cache:
           keys: [frontend-deps]
@@ -387,4 +387,3 @@ workflows:
             - build-backend
             - scan-backend
             - scan-frontend
-            

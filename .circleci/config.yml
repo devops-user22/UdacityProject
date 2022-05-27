@@ -62,6 +62,13 @@ commands:
               npm i
               npm run migration:revert
             fi
+ install_nodejs:
+    steps:
+      - run:
+          name:Install NodeJS 13
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt-get install -y nodejs
 
             
 jobs:
@@ -258,6 +265,89 @@ jobs:
       - revert_migrations:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
+  deploy_frontend:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - install_aws_cli
+      - checkout
+      - install_nodejs
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            npm install
+      - run:
+          name: Get Backend URL
+          command: |
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            echo "API_URL=http://$BACKEND_AWS_PUBLIC_IP:3030"  >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Copy frontend to s3 bucket.
+          command: |
+            cd frontend
+            npm run build
+            aws s3 cp dist s3://udapeople-prod-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - destroy_environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy_environment
+      - revert_migrations:
+          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+  
+  deploy_backend:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - install_aws_cli
+      - install_ansiblr
+      - install_nodejs
+      - checkout
+      - attach_workspace:
+          at: ~/
+      - add_ssh_keys:
+          fingerprints: [ "3b:00:12:97:31:d8:93:15:08:b0:2c:7e:6c:ac:62:7b" ]
+      - restore_cache:
+          keys: [backend-deps]
+      - run:
+          name: Install dependencies
+          command: |
+            cd backend
+            npm install
+      - run:
+          name: Build backend app
+          command: |
+            cd backend
+            npm run build
+            tar -czf artifact.tar.gz dist/* package*
+            cd ..
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+       - run:
+          name: Deploy backend
+          command: |           
+            export TYPEORM_MIGRATION_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
+      - run:
+          name: Setup EC2 instance & copy compiled backend to the EC2 instance
+          command: |
+            ls ~/project/.circleci/ansible/roles/deploy_backend/files/
+            cd ~/project/backend
+            ansible-galaxy install weareinteractive.environment
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/playbook.yml
+      - destroy_environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - undo_migrations
+
   notify_on_success:
     docker:
       - image: cimg/base:stable
@@ -289,6 +379,10 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       - notify_on_success:
           requires:
             - build-frontend

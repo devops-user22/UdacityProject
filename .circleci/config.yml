@@ -337,19 +337,17 @@ jobs:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
   smoke-test:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/base:stable
     steps:
+      - install_aws_cli
+      - install_nodejs
       - attach_workspace:
           at: ~/
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update curl
-            pip install awscli
+
       - run:
           name: Test frontend app
           command: |
-            if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.us-west-1.amazonaws.com/ | grep "Welcome"
+            if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-west-1.amazonaws.com/ | grep "Welcome"
             then
               exit 0
             else

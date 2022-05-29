@@ -24,14 +24,16 @@
   # Get the environment variables from CircleCI and add to the EC2 instance
   environment:
       NODE_ENV: production
-      TYPEORM_MIGRATIONS: "{{ lookup('env','TYPEORM_MIGRATIONS') }}"
+      VERSION: "1"
+      TYPEORM_CONNECTION: "{{ lookup('env','TYPEORM_CONNECTION') }}"
       TYPEORM_MIGRATION_DIR: "{{ lookup('env','TYPEORM_MIGRATION_DIR') }}"
+      TYPEORM_ENTITIES: "{{ lookup('env','TYPEORM_ENTITIES') }}"
+      TYPEORM_MIGRATIONS: "{{ lookup('env','TYPEORM_MIGRATIONS') }}"      
+      TYPEORM_HOST: "{{ lookup('env','TYPEORM_HOST') }}"    
+      TYPEORM_PORT: "{{ lookup('env','TYPEORM_PORT') }}"     
       TYPEORM_USERNAME: "{{ lookup('env','TYPEORM_USERNAME') }}"
       TYPEORM_PASSWORD: "{{ lookup('env','TYPEORM_PASSWORD') }}"
       TYPEORM_DATABASE: "{{ lookup('env','TYPEORM_DATABASE') }}"
-      TYPEORM_CONNECTION: postgres
-      TYPEORM_ENTITIES: /root/backend_app/modules/domain/**/*.entity.js
-      TYPEORM_HOST: "{{ lookup('env','TYPEORM_HOST') }}"
 
   roles:
     - deploy

@@ -23,8 +23,7 @@
 - name: "Executing node"
   shell: |
     export
-    cd ~/backend_app/dist
-    pm2 stop default
+    cd ~/backend_app
     pm2 start main.js
   register: execute_node
 

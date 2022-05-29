@@ -419,11 +419,4 @@ jobs:
 workflows:
   default:
     jobs:
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
-      - notify_on_success:
-          requires:
-            - build-frontend
-            - build-backend
-            - scan-backend
-            - scan-frontend
+      - smoke-test

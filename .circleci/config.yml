@@ -56,8 +56,10 @@ commands:
           when: on_fail
           command: |
             SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
-            if(( $SUCCESS == 1 )); 
+            if(( $SUCCESS == 0 )); 
             then
+              echo ${KVDB_BUCKET}
+              echo $parameters.Workflow_ID
               cd ~/project/backend
               npm install
               npm run migrations:revert
@@ -417,29 +419,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-frontend
-      - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          filters:
-            branches:
-              only: [master]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
       - notify_on_success:

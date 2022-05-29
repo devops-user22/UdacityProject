@@ -1,7 +1,7 @@
 ---
 - name: "Creates backend app directory"
   file:
-    path: ~/backend-app
+    path: ~/backend_app
     state: directory
 
 - name: "Copy compiled backend app"
@@ -17,7 +17,7 @@
 
 - name: "Install dependencies for project"
   shell: |
-    cd ~/backend-app
+    cd ~/backend_app
     npm i
 
 - name: "Executing node"

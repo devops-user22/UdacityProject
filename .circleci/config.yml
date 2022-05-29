@@ -40,10 +40,9 @@ commands:
           when: on_fail
           command: |
             echo "Destroying environment: <<parameters.workflow_id>> "
-            echo "Destroying environment: <<parameters.workflow_id>> "
-            aws cloudformation delete-stack --stack-name udapeople-backend-prod-<<parameters.workflow_id>>
-            aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
-            aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow_id>>
+            #aws cloudformation delete-stack --stack-name udapeople-backend-prod-<<parameters.workflow_id>>
+            #aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            #aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow_id>>
 
   revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -55,9 +54,12 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
+            echo "Revert Migrations: PID -> <<parameters.workflow_id>> "
+            echo "Revert Migrations: Bucket -> ${KVDB_BUCKET} "
             $SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
             if(( $SUCCESS == 1 )); 
             then
+              echo "****Revert****"
               cd ~/project/backend
               npm install
               npm run migrations:revert

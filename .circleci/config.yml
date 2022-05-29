@@ -40,6 +40,10 @@ commands:
           when: on_fail
           command: |
             echo "Destroying environment: <<parameters.workflow_id>> "
+            echo "Destroying environment: <<parameters.workflow_id>> "
+            aws cloudformation delete-stack --stack-name udapeople-backend-prod-<<parameters.workflow_id>>
+            aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow_id>>
 
   revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -51,12 +55,12 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            $SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
-            if(( $SUCCESS==1 )); 
+            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
+            if(( $SUCCESS == 1 )); 
             then
               cd ~/project/backend
-              npm i
-              npm run migration:revert
+              npm install
+              npm run migrations:revert
             fi
   install_nodejs:
     steps:
@@ -255,7 +259,7 @@ jobs:
           command: |
             if grep -q "has been executed successfully." migration_output.txt
             then
-              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
+              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1' --ssl-no-revoke
             fi
       - destroy_environment
       - revert_migrations:
@@ -334,6 +338,45 @@ jobs:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+  smoke-test:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update curl
+            pip install awscli
+      - run:
+          name: Test Frontend app.
+          command: |
+            if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.us-west-1.amazonaws.com/ | grep "Welcome"
+            then
+              exit 0
+            else
+              exit 1
+            fi
+      - run:
+          name: Test backend app.
+          command: |
+              BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+              export API_URL=http://$BACKEND_PUBLIC_IP:3030"
+              if curl -s $API_URL/api/status | grep "ok"
+              then
+                exit 0
+              else
+                exit 1
+              fi
+      - destroy_environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert_migrations:
+          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+
 
   notify_on_success:
     docker:
@@ -370,6 +413,8 @@ workflows:
           requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
       - notify_on_success:
           requires:
             - build-frontend

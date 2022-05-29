@@ -55,15 +55,10 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            echo ${KVDB_BUCKET}
-            echo $parameters.Workflow_ID
-            $SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
-            if(( $SUCCESS == 0 )); 
-            then
               cd ~/project/backend
               npm install
               npm run migrations:revert
-            fi
+
   install_nodejs:
     steps:
       - run:

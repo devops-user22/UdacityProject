@@ -47,22 +47,21 @@ commands:
   revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      Workflow_ID:
-        type: string   
+      workflow_id:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
-            echo "Revert Migrations: PID -> <<parameters.workflow_id>> "
-            echo "Revert Migrations: Bucket -> ${KVDB_BUCKET} "
-            $SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.Workflow_ID>>)
-            if(( $SUCCESS == 1 )); 
+            echo "Destroying environment: <<parameters.workflow_id>> "
+            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<<parameters.workflow_id>>)
+            if(( $SUCCESS==1 )); 
             then
-              echo "****Revert****"
               cd ~/project/backend
-              npm install
-              npm run migrations:revert
+              npm i
+              npm run migration:revert
             fi
   install_nodejs:
     steps:
@@ -259,13 +258,13 @@ jobs:
       - run:
           name: Store migration result in a file.
           command: |
-            if grep -q "has been executed successfully." ~/project/backend/migration_output.txt
+            if grep -q "has been executed successfully." migration_output.txt
             then
-              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1' --ssl-no-revoke
+              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             fi
       - destroy_environment
       - revert_migrations:
-          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+         workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
   deploy-frontend:
     docker:
       - image: cimg/base:stable
@@ -298,7 +297,7 @@ jobs:
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
-          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
   
   deploy-backend:
     docker:
@@ -339,7 +338,7 @@ jobs:
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
-          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11
@@ -352,7 +351,7 @@ jobs:
             apk add --update curl
             pip install awscli
       - run:
-          name: Test Frontend app.
+          name: Test frontend app
           command: |
             if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.us-west-1.amazonaws.com/ | grep "Welcome"
             then
@@ -377,35 +376,8 @@ jobs:
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
-          Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
-  deploy_cloudfront_infrastructure:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Deploy the backend infrastructure using cloudformation
-          command: |
-            OLD_WORKFLOW_ID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`UdapeopleWorkflowID\`].Value" \
-              --no-paginate --output text)
-            echo "OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID."
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            printf '%s\n' "${STACKS[@]}"
-            aws cloudformation deploy \
-              --template-file .circleci/cloudformation/cloudfront_infrastructure.yml \
-              --parameter-overrides ID="prod-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --stack-name udapeople-prod-cloudfront
-            if printf '%s\n' "${STACKS[@]}" | grep -q "$OLD_WORKFLOW_ID"; then
-              echo "Removing previous stack"
-              aws s3 rm "s3://udapeople-${OLD_WORKFLOW_ID}" --recursive
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${OLD_WORKFLOW_ID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OLD_WORKFLOW_ID}"
-            fi
-      - destroy_environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
-      - undo_migrations
+         workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+
 
   notify_on_success:
     docker:

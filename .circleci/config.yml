@@ -258,7 +258,7 @@ jobs:
       - run:
           name: Store migration result in a file.
           command: |
-            if grep -q "has been executed successfully." migration_output.txt
+            if grep -q "has been executed successfully." ~/project/backend/migration_output.txt
             then
               curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             fi

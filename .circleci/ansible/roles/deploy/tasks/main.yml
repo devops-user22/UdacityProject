@@ -4,7 +4,7 @@
     path: ~/backend_app
     state: directory
     
- - name: "Trouble"
+- name: "Trouble"
   shell: |
     pwd
     ls -la

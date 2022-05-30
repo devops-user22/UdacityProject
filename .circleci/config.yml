@@ -324,6 +324,8 @@ jobs:
       - install_nodejs
       - add_ssh_keys:
           fingerprints: [ "3b:00:12:97:31:d8:93:15:08:b0:2c:7e:6c:ac:62:7b" ]
+      - attach_workspace:
+          at: ~/
       - restore_cache:
           keys: [backend-deps]
       - run:
@@ -370,7 +372,6 @@ jobs:
       - install_nodejs
       - attach_workspace:
           at: ~/
-
       - run:
           name: Test frontend app
           command: |
@@ -383,17 +384,17 @@ jobs:
       - run:
           name: Test backend app.
           command: |
-              BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-              export API_URL=http://$BACKEND_PUBLIC_IP:3030"
-              if curl -s $API_URL/api/status | grep "ok"
-              then
+            export API_URL=http://$BACKEND_PUBLIC_IP:3030"
+            if curl -s $API_URL/api/status | grep "ok"
+            then
                 exit 0
-              else
+            else
                 exit 1
-              fi
+            fi
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:

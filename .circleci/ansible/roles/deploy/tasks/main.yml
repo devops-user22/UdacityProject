@@ -7,8 +7,13 @@
 - name: "Copy compiled backend app"
   unarchive:
     src: artifact.tar.gz
-    dest: ~/backend_app/
+    dest: ~/backend_app
 
+- name: "Copy compiled backend app"
+  shell: |
+    pwd
+    ls -la
+    find artifact
 
 - name: "Install dependencies for project"
   shell: |

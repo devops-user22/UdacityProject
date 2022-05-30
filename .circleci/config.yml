@@ -283,8 +283,6 @@ jobs:
       - checkout
       - install_aws_cli
       - install_nodejs
-      - attach_workspace:
-          at: ~/
       - restore_cache:
           keys: [frontend-deps]
       - run:
@@ -326,8 +324,6 @@ jobs:
       - install_nodejs
       - add_ssh_keys:
           fingerprints: [ "3b:00:12:97:31:d8:93:15:08:b0:2c:7e:6c:ac:62:7b" ]
-      - attach_workspace:
-          at: ~/
       - restore_cache:
           keys: [backend-deps]
       - run:

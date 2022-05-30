@@ -3,17 +3,17 @@
   file:
     path: ~/backend_app
     state: directory
+    
+ - name: "Trouble"
+  shell: |
+    pwd
+    ls -la
+    find / -name "artifact"
 
 - name: "Copy compiled backend app"
   unarchive:
     src: artifact.tar.gz
     dest: ~/backend_app
-
-- name: "Trouble"
-  shell: |
-    pwd
-    ls -la
-    find / -name "artifact"
 
 - name: "Install dependencies for project"
   shell: |

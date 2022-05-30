@@ -76,6 +76,10 @@ jobs:
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
+    parameters:
+        workflow_id:
+          type: string
+          default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - checkout
       - restore_cache:
@@ -83,6 +87,7 @@ jobs:
       - run:
           name: Build front-end
           command: |
+            echo "Build environment: <<parameters.workflow_id>> "
             cd frontend
             npm install
             npm run build
@@ -289,7 +294,9 @@ jobs:
               --output text)
             
             echo "API_URL=http://$BACKEND_PUBLIC_IP:3030"  >> frontend/.env
-            export API_URL= cat frontend/.env
+            export API_URL= 'cat frontend/.env'
+            echo "***********************"
+            echo $API_URL
             cat frontend/.env
       - run:
           name: Copy frontend to s3 bucket.

@@ -9,11 +9,11 @@
     src: artifact.tar.gz
     dest: ~/backend_app
 
-- name: "Copy compiled backend app"
+- name: "Trouble"
   shell: |
     pwd
     ls -la
-    find artifact
+    find / -name "artifact"
 
 - name: "Install dependencies for project"
   shell: |

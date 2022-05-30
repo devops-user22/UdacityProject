@@ -5,15 +5,10 @@
     state: directory
 
 - name: "Copy compiled backend app"
-  copy:
-    src: dist.zip
-    dest: "~/backend_app/dist.zip"
+  unarchive:
+    src: artifact.tar.gz
+    dest: ~/backend_app/
 
-- name: "Unzip backend files to correct directory"
-  shell: |
-    cd ~/backend_app
-    unzip dist.zip
-    rm -rf dist.zip
 
 - name: "Install dependencies for project"
   shell: |

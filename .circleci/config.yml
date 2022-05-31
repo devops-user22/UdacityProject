@@ -428,12 +428,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - deploy_cloudfront_infrastructure:
+      - deploy_cloudfront_infrastructure
       - cleanup:
           requires: [deploy_cloudfront_infrastructure]
-      - notify_on_success:
-          requires:
-            - build-frontend
-            - build-backend
-            - scan-backend
-            - scan-frontend

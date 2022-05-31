@@ -342,9 +342,9 @@ jobs:
           command: |
             if curl -s http://upeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-west-1.amazonaws.com/ | grep "Welcome"
             then
-              exit 2
+              exit 0
             else
-              exit 3
+              exit 1
             fi
       - run:
           name: Test backend app.

@@ -40,9 +40,9 @@ commands:
           when: on_fail
           command: |
             echo "Destroying environment: <<parameters.workflow_id>> "
-            aws cloudformation delete-stack --stack-name udapeople-backend-prod-<<parameters.workflow_id>>
-            aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
-            aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow_id>>
+            aws cloudformation delete-stack --stack-name upeople-backend-prod-<<parameters.workflow_id>>
+            aws s3 rm s3://upeople-<<parameters.workflow_id>> --recursive
+            aws cloudformation delete-stack --stack-name upeople-frontend-prod-<<parameters.workflow_id>>
 
   revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -280,7 +280,7 @@ jobs:
           command: |
             cd frontend
             npm run build
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws s3 cp dist s3://upeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
@@ -338,7 +338,7 @@ jobs:
       - run:
           name: Test frontend app
           command: |
-            if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-west-1.amazonaws.com/ | grep "Welcome"
+            if curl -s http://upeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-west-1.amazonaws.com/ | grep "Welcome"
             then
               exit 0
             else
@@ -372,18 +372,17 @@ jobs:
           name: Save old ID
           command: |
             export OLD_WORKFLOW_ID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`UdapeopleWorkflowID\`].Value" \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
-            echo "OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID."
+            echo "OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID"
             curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "$OLD_WORKFLOW_ID"
       - run:
           name: Deploy the backend infrastructure using cloudformation
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/cloudformation/cloudfront.yml \
+              --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name InitialStack
-
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
@@ -408,9 +407,9 @@ jobs:
             if printf '%s\n' "${STACKS[@]}" | grep -q "$OLD_WORKFLOW_ID"; 
             then
               echo "Removing previous stack"
-              aws s3 rm "s3://udapeople-${OLD_WORKFLOW_ID}" --recursive
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${OLD_WORKFLOW_ID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OLD_WORKFLOW_ID}"
+              aws s3 rm "s3://upeople-${OLD_WORKFLOW_ID}" --recursive
+              aws cloudformation delete-stack --stack-name "upeople-backend-${OLD_WORKFLOW_ID}"
+              aws cloudformation delete-stack --stack-name "upeople-frontend-${OLD_WORKFLOW_ID}"
             fi
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"

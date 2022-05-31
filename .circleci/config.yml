@@ -40,9 +40,9 @@ commands:
           when: on_fail
           command: |
             echo "Destroying environment: <<parameters.workflow_id>> "
-            aws cloudformation delete-stack --stack-name upeople-backend-prod-<<parameters.workflow_id>>
+            aws cloudformation delete-stack --stack-name upeople-backend-<<parameters.workflow_id>>
             aws s3 rm s3://upeople-<<parameters.workflow_id>> --recursive
-            aws cloudformation delete-stack --stack-name upeople-frontend-prod-<<parameters.workflow_id>>
+            aws cloudformation delete-stack --stack-name upeople-frontend-<<parameters.workflow_id>>
 
   revert_migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -372,8 +372,8 @@ jobs:
           name: Save old ID
           command: |
             export OLD_WORKFLOW_ID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              --no-paginate --output text)
+                    list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                    --no-paginate --output text)
             echo "OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID"
             curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "$OLD_WORKFLOW_ID"
       - run:

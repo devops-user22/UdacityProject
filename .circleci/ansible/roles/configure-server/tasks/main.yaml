@@ -2,15 +2,13 @@
 ---    
 - name: "Install Node"
   become: true
-  apt:
-    name: ["nodejs"]
-    state: latest
-    update_cache: yes
+  shell: |
+   curl -sl https://deb.nodesource.com/setup_13.x -E bash -
    
 - name: "Install npm"
   become: true
   apt:
-    name: ["npm"]
+    name: ["nodejs"]
     state: latest
     update_cache: yes
 

@@ -22,19 +22,8 @@
       become: true
       raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3)
       changed_when: false
-
-  # Get the environment variables from CircleCI and add to the EC2 instance
-  environment:
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
-      YPEORM_USERNAME: "{{ lookup('env','TYPEORM_USERNAME') }}"
-      TYPEORM_PASSWORD: "{{ lookup('env','TYPEORM_PASSWORD') }}"
-      TYPEORM_DATABASE: "{{ lookup('env','TYPEORM_DATABASE') }}"
-      NODE_ENV: production
-      ENVIRONMENT: production
-      TYPEORM_CONNECTION: postgres
-      TYPEORM_ENTITIES: /root/backend_app/modules/domain/**/*.entity.js
-      TYPEORM_HOST: "{{ lookup('env','TYPEORM_HOST') }}"
-
+      
+    - setup:
 
   roles:
     - configure-server

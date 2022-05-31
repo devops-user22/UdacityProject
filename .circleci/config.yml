@@ -402,7 +402,7 @@ jobs:
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
             export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
-            echo "OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID"
+            echo OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID} ]]; 
             then
@@ -411,10 +411,6 @@ jobs:
               aws cloudformation delete-stack --stack-name "upeople-backend-${OLD_WORKFLOW_ID}"
               aws cloudformation delete-stack --stack-name "upeople-frontend-${OLD_WORKFLOW_ID}"
             fi
-      - destroy_environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
-      - revert_migrations:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   notify_on_success:
     docker:

@@ -75,11 +75,7 @@ commands:
 jobs:
   build-frontend:
     docker:
-      - image: circleci/node:13.8.0
-    parameters:
-        workflow_id:
-          type: string
-          default: ${CIRCLE_WORKFLOW_ID:0:7}
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -87,7 +83,6 @@ jobs:
       - run:
           name: Build front-end
           command: |
-            echo "Build environment: <<parameters.workflow_id>> "
             cd frontend
             npm install
             npm run build
@@ -98,7 +93,7 @@ jobs:
 
   build-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
@@ -116,67 +111,57 @@ jobs:
 
   test-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-test]
+          keys: [frontend-deps]
       - run:
           name: front-end test
           command: |
             cd frontend
             npm install
-            npm run test
-      - save_cache:
-          paths: [frontend/test]
-          key: frontend-test
+            npm test
       - notify_on_failure
                 
   test-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-test]
+          keys: [backend-deps]
       - run:
-          name: Back-end build
+          name: Back-end test
           command: |
             cd backend
             npm install
-            npm run test
-      - save_cache:
-          paths: [backend/test]
-          key: backend-test
+            npm test
       - notify_on_failure
 
   scan-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-scan]
+          keys: [frontend-deps]
       - run:
           name: front-end scan
           command: |
             cd frontend
             npm install
-            npm audit fix --audit-level=critical --force
-            # npm install oauth-sign@^0.9.0
+            npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
-      - save_cache:
-          paths: [frontend/scan]
-          key: frontend-scan
       - notify_on_failure
 
   scan-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-scan]
+          keys: [backend-deps]
       - run:
           name: Back-end scan
           command: |
@@ -184,11 +169,7 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
-            # npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
-      - save_cache:
-          paths: [backend/scan]
-          key: backend-scan
       - notify_on_failure
        
   deploy-infrastructure:
@@ -249,7 +230,8 @@ jobs:
           command: |
             cd .circleci/ansible
             cat inventory.txt
-            ansible-playbook -i inventory.txt configure-server.yml     
+            ansible-playbook -i inventory.txt configure-server.yml
+      - destroy_environment     
 
   run-migrations:
     docker:
@@ -288,27 +270,18 @@ jobs:
       - run:
           name: Get Backend URL
           command: |
-            export API_URL=`cat .circleci/outputs/backend_url.txt`
-            echo "API_URL: $API_URL"
-            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            #export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
-            #echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
           name: Copy frontend to s3 bucket.
           command: |
             cd frontend
-            npm install
             npm run build
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/frontend/dist
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:
@@ -350,15 +323,6 @@ jobs:
             cd .circleci/ansible/
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-            #cd dist
-            #cp ../package.json .
-            #zip -rq dist.zip *
-            #mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            #mv dist.zip ~/project/.circleci/ansible/roles/deploy/files/
-            #cd ~/project/.circleci/ansible/
-            #echo "Contents  of the inventory.txt file is -------"
-            #cat inventory.txt
-            #ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy_environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert_migrations:

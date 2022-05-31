@@ -402,15 +402,19 @@ jobs:
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
             export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
-            echo OLD_WORKFLOW_ID: $OLD_WORKFLOW_ID
+            echo OLD_WORKFLOW_ID: $OldWorkflowID
 
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID} ]]; 
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]; 
             then
               echo "Removing previous stack"
-              aws s3 rm "s3://upeople-${OLD_WORKFLOW_ID}" --recursive
-              aws cloudformation delete-stack --stack-name "upeople-backend-${OLD_WORKFLOW_ID}"
-              aws cloudformation delete-stack --stack-name "upeople-frontend-${OLD_WORKFLOW_ID}"
+              aws s3 rm "s3://upeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "upeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "upeople-frontend-${OldWorkflowID}"
             fi
+      - destroy_environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert_migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   notify_on_success:
     docker:
@@ -424,6 +428,38 @@ jobs:
 workflows:
   default:
     jobs:
-      - deploy_cloudfront_infrastructure
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [master]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
+      - deploy_cloudfront_infrastructure:
+          requires: [smoke-test]
       - cleanup:
           requires: [deploy_cloudfront_infrastructure]
+      - notify_on_success:
+          requires:
+            - build-frontend
+            - build-backend
+            - scan-backend
+            - scan-frontend
